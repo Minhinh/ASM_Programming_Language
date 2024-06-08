@@ -1,0 +1,107 @@
+// RO used for storing elapsed seconds
+// R1 for displaying texts, R2 for 1-second delay
+// R3 and R4 for storing real-time values
+// R5 for comparing delay, R6 for storing eplased minutes
+// R10 Split Seconds 
+// R11 Split Minutes
+// R12 Number of Splits
+// Instruction keyboard
+// "p" for play
+// "r" for reset
+// "s" for split
+// "a" for stop
+// --------------------- Display user message -----------------------
+//
+      mov R1, #user_message
+      str R1, .WriteString
+      b start           // branch to start
+// ------------------ Loop for keyboard input -----------------------
+//
+start:
+      ldr R2, .LastKeyAndReset // key pressed 
+      cmp R2, #80       // ASCII value 80 "p" 
+      beq display       // If equal goes to display    
+      bne start         // Else do the loop again
+// ------------------ Reset Function --------------------------------
+//
+reset:
+      str R1, .WriteString 
+      mov R0, #0        // Reset elapsed Seconds
+      mov R6, #0        // Reset elapsed Minutes
+      mov R10, #0       // Reset split Seconds
+      mov R11, #0       // Reset split Minutes
+      mov R12, #0       // Reset number of splits
+// ------------------ Clock Display ---------------------------------
+//
+display:
+      mov R1, #elapsed  // Display elapsed message
+      str R1, .WriteString
+      str R6, .WriteUnsignedNum // Display R6(stored elapsed minutes)
+      mov R1, #58       // ASCII value 58
+      str R1, .WriteChar
+      str R0, .WriteUnsignedNum // Display R0(stored elapsed seconds)
+      mov R1, #endl     // Line break for formatting
+      str R1, .WriteString
+      mov R1, #split    // Display split message
+      str R1, .WriteString
+      str R11, .WriteUnsignedNum // Display R11(stored split minutes)
+      mov R1, #58
+      str R1, .WriteChar
+      str R10, .WriteUnsignedNum //Display R10(stored split seconds)
+// ------------------ Pre Delay -------------------------------------
+// This ensure not immediately move to the next time measurement
+//
+pre_delay:
+      mov R1, #endl
+      str R1, .WriteString
+      mov R2, #1        // represent 1-second delay
+      ldr R3, .Time     // LOAD value of real time to R3
+// ------------------- Main Time ------------------------------------
+//
+main_time:
+      ldr R4, .Time     // Load value of current real time to R4
+      sub R5, R4, R3    // Subtract the value R4, R3 and store R5 
+      cmp R5, R2        // Compare the value 
+      blt main_time     // If less than delay time then run again the main_delay
+      add R0, R0, #1    // Else increase elapsed seconds
+      cmp R0, #60       // If a minute pass then branch to increment_min
+      beq increment_min //
+      bne key_press     // else go for key_press
+// ------------------- Increment Min -------------------------------
+//
+increment_min:
+      add R6, R6, #1    // Increase the elapsed minutes by 1
+      mov R0, #0        // RESET elapsed seconds to 0
+// ------------------- Key Press --------------------------------------
+// 
+key_press:
+      LDR R2, .LastKeyAndReset
+      cmp r2, #0        // none key pressed then go back Display section
+      beq display
+      cmp r2, #65       // 'a' for stop
+      beq start
+      cmp r2,#82        // 'r' for reset
+      beq reset
+      cmp r2, #83       // 's' for split
+      beq split_time
+      cmp r2, #72       // 'h' for HALT the program
+      beq out_message
+// ------------------- Split Time ----------------------------------
+//
+split_time:
+      mov R10, R0       // Elapsed Seconds - Split Seconds
+      mov R11, R6       // Elapsed Minutes - split Minutes
+      add R12, R12, #1  // number of split time + 1
+      bl display 
+// ------------------- Out Message -----------------------------------------
+//
+out_message:
+      mov R1, #stop     // Display stop message
+      str R1, .WriteString 
+      halt 
+// -----------------------------------------------------------------
+user_message: .ASCIZ "'p' -> play\n'r' -> reset\n 's' -> split\n 'a' -> stop\n"
+elapsed: .ASCIZ "Elapsed time: "
+split: .ASCIZ "Split time: "
+stop: .ASCIZ "The program is now HALT\n"
+endl: .ASCIZ "\n"
