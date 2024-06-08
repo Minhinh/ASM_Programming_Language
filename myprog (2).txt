@@ -1,0 +1,13 @@
+//R0 - remaining matchsticks
+//R1 - used for writing messages
+//R2 - number to remove  1|      
+      MOV R0, #15 
+      MOV R1, #t1
+      STR R1, .WriteString
+      MOV R1, #t2
+      STR R1, .WriteString
+      LDR R2, .InputNum
+      SUB R0, R0, R2
+      HLT
+t1:   .ASCIZ "Remaining\n"
+t2:   .ASCIZ "How many do you want to remove(1-3) ?\n"
